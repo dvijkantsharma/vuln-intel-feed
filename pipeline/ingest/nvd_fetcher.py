@@ -1,6 +1,6 @@
 import requests
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 import os
 import time
@@ -16,7 +16,7 @@ def fetch_nvd_cves(days_back=30):
         "startIndex": 0,
         "cveId": "",
         "cpeName": "",
-        "published": (datetime.utcnow() - timedelta(days=days_back)).strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+        "published": (datetime.now(timezone.utc) - timedelta(days=days_back)).strftime("%Y-%m-%dT%H:%M:%S.000"),
     }
     all_cves = []
     while True:
