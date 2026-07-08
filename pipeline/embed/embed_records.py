@@ -44,8 +44,10 @@ for i in range(0, len(records), 50):
             text = text[:2000]  # Trim to 2000 characters max
             embedding_texts.append(text)
         
-        # Embed texts
-        embeddings = ollama.embeddings(model="nomic-embed-text", prompt=embedding_texts)
+        embeddings = []
+        for text in embedding_texts:
+            result = ollama.embeddings(model="nomic-embed-text", prompt=text)
+            embeddings.append(result["embedding"])
         
         # Store embeddings in ChromaDB
         for j, record in enumerate(new_batch):
