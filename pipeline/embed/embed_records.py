@@ -52,13 +52,13 @@ for i in range(0, len(records), 50):
         # Store embeddings in ChromaDB
         for j, record in enumerate(new_batch):
             metadata = {
-                "source": record["source"],
-                "severity": record.get("severity", ""),
-                "cvss_score": record.get("cvss_score", 0.0),
-                "published_date": record["published_date"],
-                "attack_vector": record["attack_vector"],
-                "cwe_ids": ",".join(record["cwe_ids"]),
-                "title": record["title"][:200]
+                "source":         record.get("source") or "",
+                "severity":       record.get("severity") or "",
+                "cvss_score":     float(record.get("cvss_score") or 0.0),
+                "published_date": record.get("published_date") or "",
+                "attack_vector":  record.get("attack_vector") or "",
+                "cwe_ids":        ",".join(record.get("cwe_ids") or []),
+                "title":          (record.get("title") or "")[:200]
             }
             collection.add(
                 embeddings=[embeddings[j]],
