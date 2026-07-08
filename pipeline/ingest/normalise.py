@@ -1,21 +1,21 @@
 import json
 
 def extract_nvd_record(cve):
-    id = cve["id"]
+    id = cve["cve"]["id"]
     title = f"{id} Vulnerability"
-    description = next((desc["description"] for desc in cve["descriptions"] if desc["lang"] == "en"), None)
+    description = next((desc["description"] for desc in cve["cve"]["descriptions"] if desc["lang"] == "en"), None)
     severity = None
     cvss_score = None
     for metric in ["cvssMetricV31", "cvssMetricV30", "cvssMetricV2"]:
-        if metric in cve:
-            severity = cve[metric]["baseSeverity"]
-            cvss_score = cve[metric]["cvssData"][0]["baseScore"]
+        if metric in cve["cve"]:
+            severity = cve["cve"][metric]["baseSeverity"]
+            cvss_score = cve["cve"][metric]["cvssData"][0]["baseScore"]
             break
-    attack_vector = cve.get("cvssData", [{}])[0].get("attackVector", "UNKNOWN")
-    cwe_ids = [weakness["description"] for weakness in cve.get("weaknesses", []) if weakness["description"].startswith("CWE-")]
-    published_date = cve["published"][:10]
+    attack_vector = cve["cve"].get("cvssData", [{}])[0].get("attackVector", "UNKNOWN")
+    cwe_ids = [weakness["description"] for weakness in cve["cve"].get("weaknesses", []) if weakness["description"].startswith("CWE-")]
+    published_date = cve["cve"]["published"][:10]
     tags = []
-    raw = cve
+    raw = cve["cve"]
     return {
         "id": id,
         "title": title,
