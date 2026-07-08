@@ -1,0 +1,14 @@
+requests==2.31.0
+chromadb==0.4.24
+ollama==0.1.8
+scikit-learn==1.4.0
+umap-learn==0.5.6
+hdbscan==0.8.33
+pandas==2.2.0
+gspread==6.0.2
+google-auth==2.27.0
+python-dotenv==1.0.1
+feedparser==6.0.11
+streamlit==1.31.0
+tqdm==4.66.2
+openai==1.30.0  
