@@ -1,0 +1,8 @@
+.env
+gcp_credentials.json
+chroma_db/
+data/
+__pycache__/
+*.pyc
+.aider*
+.venv/
