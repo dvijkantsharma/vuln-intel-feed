@@ -16,7 +16,7 @@ with open('data/processed/normalised.json') as f:
     records = json.load(f)
 
 # Slice records for testing
-records = records[:10]
+records = records
 
 # Get collection and client
 collection, client = get_collection()
