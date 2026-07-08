@@ -73,7 +73,12 @@ def main():
     total_arxiv_records = len(arxiv_records)
 
     all_records = nvd_records + arxiv_records
-    deduplicated_records = [dict(t) for t in {tuple(d.items()) for d in all_records}]
+    seen_ids = set()
+    deduplicated_records = []
+    for record in all_records:
+        if record["id"] not in seen_ids:
+            seen_ids.add(record["id"])
+            deduplicated_records.append(record)
 
     total_after_dedup = len(deduplicated_records)
 
