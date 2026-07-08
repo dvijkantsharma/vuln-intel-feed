@@ -60,7 +60,11 @@ for i in range(0, len(records), 50):
                 "cwe_ids": ",".join(record["cwe_ids"]),
                 "title": record["title"][:200]
             }
-            collection.insert([embeddings[j]], metadata=metadata, ids=[record["id"]])
+            collection.add(
+                embeddings=[embeddings[j]],
+                metadatas=[metadata],
+                ids=[record["id"]]
+            )
     
     # Update progress bar
     pbar.update(len(batch))
