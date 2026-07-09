@@ -1,76 +1,75 @@
 import json
-import sys
-import importlib
-from tqdm import tqdm
+import os
+import numpy as np
 import ollama
-
-# Add pipeline.embed to sys.path
-sys.path.insert(0, 'pipeline/embed')
-
-# Import get_collection from chroma_setup
-chroma_setup = importlib.import_module('chroma_setup')
-get_collection = chroma_setup.get_collection
+import tqdm
+import pathlib
 
 # Load data
 with open('data/processed/normalised.json') as f:
     records = json.load(f)
 
 # Slice records for testing
-records = records
+records = records[:10]
 
-# Get collection and client
-collection, client = get_collection()
-
-# Get existing IDs
-existing_ids = collection.get()["ids"]
+# Load existing IDs
+try:
+    with open('data/processed/embedding_ids.json') as f:
+        existing_ids = json.load(f)
+except FileNotFoundError:
+    existing_ids = []
 
 # Initialize progress bar
-pbar = tqdm(total=len(records))
+pbar = tqdm.tqdm(total=len(records))
 
-# Embed records in batches
-for i in range(0, len(records), 50):
-    batch = records[i:i+50]
-    batch_ids = [record["id"] for record in batch]
-    
-    # Skip records already embedded
-    new_batch_ids = [id for id in batch_ids if id not in existing_ids]
-    new_batch = [record for record in batch if record["id"] in new_batch_ids]
-    
-    if new_batch:
+# Embed records
+all_embeddings = []
+all_ids = existing_ids[:]
+all_metadatas = []
+all_documents = []
+for record in records:
+    if record["id"] not in existing_ids:
         # Build embedding text
-        embedding_texts = []
-        for record in new_batch:
-            text = record["title"] + " " + record["description"] + " " + " ".join(record["cwe_ids"]) + " " + record["attack_vector"]
-            text = text[:2000]  # Trim to 2000 characters max
-            embedding_texts.append(text)
+        embedding_text = record["title"] + " " + record["description"] + " " + " ".join(record["cwe_ids"]) + " " + record["attack_vector"]
+        embedding_text = embedding_text[:2000]  # Trim to 2000 characters max
         
-        embeddings = []
-        for text in embedding_texts:
-            result = ollama.embeddings(model="nomic-embed-text", prompt=text)
-            embeddings.append(result["embedding"])
+        # Get embedding
+        result = ollama.embeddings(model="nomic-embed-text", prompt=embedding_text)
+        embedding = result["embedding"]
         
-        # Store embeddings in ChromaDB
-        for j, record in enumerate(new_batch):
-            metadata = {
-                "source":         record.get("source") or "",
-                "severity":       record.get("severity") or "",
-                "cvss_score":     float(record.get("cvss_score") or 0.0),
-                "published_date": record.get("published_date") or "",
-                "attack_vector":  record.get("attack_vector") or "",
-                "cwe_ids":        ",".join(record.get("cwe_ids") or []),
-                "title":          (record.get("title") or "")[:200]
-            }
-            collection.add(
-                embeddings=[embeddings[j]],
-                metadatas=[metadata],
-                ids=[record["id"]]
-            )
+        # Store embedding and metadata
+        all_embeddings.append(embedding)
+        all_ids.append(record["id"])
+        metadata = {
+            "source":         record.get("source") or "",
+            "severity":       record.get("severity") or "",
+            "cvss_score":     float(record.get("cvss_score") or 0.0),
+            "published_date": record.get("published_date") or "",
+            "attack_vector":  record.get("attack_vector") or "",
+            "cwe_ids":        ",".join(record.get("cwe_ids") or []),
+            "title":          (record.get("title") or "")[:200]
+        }
+        all_metadatas.append(metadata)
+        all_documents.append(embedding_text)
     
     # Update progress bar
-    pbar.update(len(batch))
+    pbar.update(1)
 
-# Print final ChromaDB record count
-print(collection.get()["ids"])
+# Load existing embeddings
+try:
+    existing_embeddings = np.load('data/processed/embeddings.npy')
+    all_embeddings = list(existing_embeddings) + all_embeddings
+except FileNotFoundError:
+    pass
 
-# Close progress bar
-pbar.close()
+# Save everything
+np.save("data/processed/embeddings.npy", np.array(all_embeddings))
+with open('data/processed/embedding_ids.json', 'w') as f:
+    json.dump(all_ids, f)
+with open('data/processed/embedding_metadatas.json', 'w') as f:
+    json.dump(all_metadatas, f)
+with open('data/processed/embedding_documents.json', 'w') as f:
+    json.dump(all_documents, f)
+
+# Print final count
+print(len(all_ids))
