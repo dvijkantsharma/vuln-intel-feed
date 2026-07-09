@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 import pandas as pd
-from sklearn.manifold import UMAP
+import umap
 from hdbscan import HDBSCAN
 from pipeline.embed.chroma_setup import get_collection
 
@@ -15,8 +15,8 @@ def main():
         print("Warning: fewer than 10 records")
         sys.exit(0)
 
-    umap_model = UMAP(n_components=5, n_neighbors=15, min_dist=0.1, metric="cosine", random_state=42)
-    umap_embeddings = umap_model.fit_transform(embeddings)
+    reducer = umap.UMAP(n_components=5, n_neighbors=15, min_dist=0.1, metric="cosine", random_state=42)
+    umap_embeddings = reducer.fit_transform(embeddings)
 
     hdbscan_model = HDBSCAN(min_cluster_size=5, min_samples=3, metric="euclidean", cluster_selection_method="eom")
     clusters = hdbscan_model.fit_predict(umap_embeddings)
