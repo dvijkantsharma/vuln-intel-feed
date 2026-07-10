@@ -76,8 +76,8 @@ def main():
     print(f"UMAP complete. Shape: {reduced.shape}")
 
     clusterer = hdbscan.HDBSCAN(
-        min_cluster_size=5,
-        min_samples=3,
+        min_cluster_size=15,
+        min_samples=5,
         metric="euclidean",
         cluster_selection_method="eom"
     )
@@ -86,19 +86,22 @@ def main():
     n_noise = int((labels == -1).sum())
     print(f"Found {n_clusters} clusters. Noise points: {n_noise}")
 
-    data = {
-        "id": ids,
-        "cluster": labels,
-        "title": [meta.get("title", "") for meta in metadatas],
-        "source": [meta.get("source", "") for meta in metadatas],
-        "severity": [meta.get("severity", "") for meta in metadatas],
-        "cvss_score": [meta.get("cvss_score", 0.0) for meta in metadatas],
-        "attack_vector": [meta.get("attack_vector", "") for meta in metadatas],
-        "cwe_ids": [meta.get("cwe_ids", "") for meta in metadatas],
-        "published_date": [meta.get("published_date", "") for meta in metadatas],
-        "description": [doc[:500] for doc in documents]
-    }
-    df = pd.DataFrame(data)
+    rows = []
+    for i in range(len(ids)):
+        meta = metadatas[i]
+        rows.append({
+            "id":            ids[i],
+            "cluster":       int(labels[i]),
+            "title":         meta.get("title", ""),
+            "source":        meta.get("source", ""),
+            "severity":      meta.get("severity", ""),
+            "cvss_score":    float(meta.get("cvss_score") or 0.0),
+            "attack_vector": meta.get("attack_vector", ""),
+            "cwe_ids":       meta.get("cwe_ids", ""),
+            "published_date":meta.get("published_date", ""),
+            "description":   documents[i][:500]
+        })
+    df = pd.DataFrame(rows)
     df.to_json("data/processed/clustered.json", orient="records", indent=2)
     print(df["cluster"].value_counts().sort_index())
 
