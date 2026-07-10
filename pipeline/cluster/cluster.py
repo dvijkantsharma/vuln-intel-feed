@@ -1,18 +1,16 @@
 import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-import sys
 import numpy as np
 import pandas as pd
 import umap
 from hdbscan import HDBSCAN
-from pipeline.embed.chroma_setup import get_collection
 
 def main():
-    collection, client = get_collection()
-    result = collection.get(include=["embeddings", "metadatas", "documents"])
-    ids, embeddings, metadatas, documents = result["ids"], result["embeddings"], result["metadatas"], result["documents"]
-    embeddings = np.array(embeddings)
+    import json
+    embeddings = np.load("data/processed/embeddings.npy")
+    ids = json.load(open("data/processed/embedding_ids.json"))
+    metadatas = json.load(open("data/processed/embedding_metadatas.json"))
+    documents = json.load(open("data/processed/embedding_documents.json"))
 
     if len(embeddings) < 10:
         print("Warning: fewer than 10 records")
