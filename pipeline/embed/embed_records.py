@@ -3,72 +3,73 @@ import os
 import numpy as np
 import ollama
 import tqdm
-import pathlib
 
-# Load data
-with open('data/processed/normalised.json') as f:
+with open("data/processed/normalised.json") as f:
     records = json.load(f)
 
-
-
-# Load existing IDs
+# Load all existing data
 try:
-    with open('data/processed/embedding_ids.json') as f:
-        existing_ids = json.load(f)
+    existing_ids = json.load(open("data/processed/embedding_ids.json"))
 except FileNotFoundError:
     existing_ids = []
 
-# Initialize progress bar
-pbar = tqdm.tqdm(total=len(records))
-
-# Embed records
-all_embeddings = []
-all_ids = existing_ids[:]
-all_metadatas = []
-all_documents = []
-for record in records:
-    if record["id"] not in existing_ids:
-        # Build embedding text
-        embedding_text = record["title"] + " " + record["description"] + " " + " ".join(record["cwe_ids"]) + " " + record["attack_vector"]
-        embedding_text = embedding_text[:2000]  # Trim to 2000 characters max
-        
-        # Get embedding
-        result = ollama.embeddings(model="nomic-embed-text", prompt=embedding_text)
-        embedding = result["embedding"]
-        
-        # Store embedding and metadata
-        all_embeddings.append(embedding)
-        all_ids.append(record["id"])
-        metadata = {
-            "source":         record.get("source") or "",
-            "severity":       record.get("severity") or "",
-            "cvss_score":     float(record.get("cvss_score") or 0.0),
-            "published_date": record.get("published_date") or "",
-            "attack_vector":  record.get("attack_vector") or "",
-            "cwe_ids":        ",".join(record.get("cwe_ids") or []),
-            "title":          (record.get("title") or "")[:200]
-        }
-        all_metadatas.append(metadata)
-        all_documents.append(embedding_text)
-    
-    # Update progress bar
-    pbar.update(1)
-
-# Load existing embeddings
 try:
-    existing_embeddings = np.load('data/processed/embeddings.npy')
-    all_embeddings = list(existing_embeddings) + all_embeddings
+    existing_meta = json.load(open("data/processed/embedding_metadatas.json"))
 except FileNotFoundError:
-    pass
+    existing_meta = []
 
-# Save everything
-np.save("data/processed/embeddings.npy", np.array(all_embeddings))
-with open('data/processed/embedding_ids.json', 'w') as f:
-    json.dump(all_ids, f)
-with open('data/processed/embedding_metadatas.json', 'w') as f:
-    json.dump(all_metadatas, f)
-with open('data/processed/embedding_documents.json', 'w') as f:
-    json.dump(all_documents, f)
+try:
+    existing_docs = json.load(open("data/processed/embedding_documents.json"))
+except FileNotFoundError:
+    existing_docs = []
 
-# Print final count
-print(len(all_ids))
+try:
+    existing_emb = list(np.load("data/processed/embeddings.npy"))
+except FileNotFoundError:
+    existing_emb = []
+
+# Start from existing data
+all_ids = existing_ids[:]
+all_meta = existing_meta[:]
+all_docs = existing_docs[:]
+all_emb = existing_emb[:]
+
+existing_id_set = set(existing_ids)
+
+# Only embed new records
+new_records = [r for r in records if r["id"] not in existing_id_set]
+print(f"Total: {len(records)} | Already embedded: {len(existing_ids)} | New: {len(new_records)}")
+
+for record in tqdm.tqdm(new_records):
+    embedding_text = (
+        (record.get("title") or "") + " " +
+        (record.get("description") or "") + " " +
+        " ".join(record.get("cwe_ids") or []) + " " +
+        (record.get("attack_vector") or "")
+    )[:2000]
+
+    result = ollama.embeddings(model="nomic-embed-text", prompt=embedding_text)
+
+    all_ids.append(record["id"])
+    all_emb.append(result["embedding"])
+    all_meta.append({
+        "source":         record.get("source") or "",
+        "severity":       record.get("severity") or "",
+        "cvss_score":     float(record.get("cvss_score") or 0.0),
+        "published_date": record.get("published_date") or "",
+        "attack_vector":  record.get("attack_vector") or "",
+        "cwe_ids":        ",".join(record.get("cwe_ids") or []),
+        "title":          (record.get("title") or "")[:200]
+    })
+    all_docs.append(embedding_text)
+
+# Save all four files atomically with same length
+assert len(all_ids) == len(all_emb) == len(all_meta) == len(all_docs), \
+    f"Length mismatch: ids={len(all_ids)}, emb={len(all_emb)}, meta={len(all_meta)}, docs={len(all_docs)}"
+
+np.save("data/processed/embeddings.npy", np.array(all_emb))
+json.dump(all_ids,  open("data/processed/embedding_ids.json", "w"))
+json.dump(all_meta, open("data/processed/embedding_metadatas.json", "w"))
+json.dump(all_docs, open("data/processed/embedding_documents.json", "w"))
+
+print(f"Saved {len(all_ids)} total embeddings.")

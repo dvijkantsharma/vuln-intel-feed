@@ -10,7 +10,12 @@ def main():
     ids = json.load(open("data/processed/embedding_ids.json"))
     metadatas = json.load(open("data/processed/embedding_metadatas.json"))
     documents = json.load(open("data/processed/embedding_documents.json"))
-
+    # Sync all files to shortest length to prevent IndexError
+    min_len = min(len(ids), len(metadatas), len(documents), len(embeddings))
+    ids = ids[:min_len]
+    metadatas = metadatas[:min_len]
+    documents = documents[:min_len]
+    embeddings = embeddings[:min_len]
     if len(ids) < 10:
         print("Warning: fewer than 10 records")
         sys.exit(0)
@@ -28,8 +33,8 @@ def main():
     print(f"UMAP complete. Shape: {reduced.shape}")
 
     clusterer = hdbscan.HDBSCAN(
-        min_cluster_size=200,
-        min_samples=10,
+        min_cluster_size=100,
+        min_samples=5,
         metric="euclidean",
         cluster_selection_method="eom"
     )

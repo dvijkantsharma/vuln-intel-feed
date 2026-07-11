@@ -8,10 +8,10 @@ import time
 load_dotenv()
 
 client = OpenAI(
-    base_url="https://integrate.api.nvidia.com/v1",
-    api_key=os.getenv("NVIDIA_API_KEY")
+    base_url="https://api.groq.com/openai/v1",
+    api_key=os.getenv("GROQ_API_KEY")
 )
-MODEL = "meta/llama-3.3-70b-instruct"
+MODEL = "llama-3.3-70b-versatile"
 
 df = pd.read_json("data/processed/clustered.json")
 
