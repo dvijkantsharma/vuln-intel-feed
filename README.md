@@ -206,4 +206,4 @@ Filtered to CVSS ≥ 7.0, sorted descending. Actionable view for SOC or security
 
 Dvij Kant Sharma
 MSc Cybersecurity — University of Sydney
-[LinkedIn](https://linkedin.com/in/yourprofile) · [GitHub](https://github.com/yourusername)
+[LinkedIn](https://www.linkedin.com/in/dvij-kant-sharma-4a3b541b6/) · [GitHub](https://github.com/dvijkantsharma)
