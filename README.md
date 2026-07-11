@@ -99,7 +99,7 @@ vuln-intel-feed/
 ### 1. Clone and set up environment
 
 ```bash
-git clone https://github.com/yourusername/vuln-intel-feed.git
+git clone https://github.com/dvijkantsharma/vuln-intel-feed.git
 cd vuln-intel-feed
 python -m venv .venv
 source .venv/Scripts/activate   # Windows
